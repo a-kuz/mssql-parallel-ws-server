@@ -1,0 +1,5 @@
+node_modules/**/**
+vscode-ts-node-debugging/**/**/**
+*.js
+*.log
+yarn-error.log

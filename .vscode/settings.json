@@ -1,0 +1,6 @@
+{
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "eslint.enable": false,
+    "editor.selectionHighlight": true,
+    "typescript.suggest.completeFunctionCalls": true
+}

@@ -1,0 +1,23 @@
+{    
+    "rules": {
+        "max-line-length": {
+            "options": [120]
+        },
+        "new-parens": true,
+        "no-console": {
+            "severity": "warning",
+            "options": ["debug", "info", "time", "timeEnd", "trace"]
+        },
+        "no-arg": true,
+        "no-bitwise": true,
+        "no-conditional-assignment": true,
+        "no-consecutive-blank-lines": false    
+        
+    },
+    "jsRules": {
+        "max-line-length": {
+            "options": [120]
+        }
+    }
+    
+}
