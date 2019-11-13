@@ -1,0 +1,50 @@
+image: node:latest
+stages:
+  - build
+  - test
+  - release
+  - deploy
+  - cleanup
+
+compile:
+  stage: build
+  script:
+    - npm install
+  cache:
+   paths:
+     - node_modules/
+    
+ 
+testing:
+  stage: test
+  script:
+    - echo "Testing"
+ 
+release-image:
+  stage: release
+  script:
+    - npm start
+  only:
+    - master
+    - release
+ 
+deploy-to-review:
+  stage: deploy
+  script:
+    - echo "Deploy docker-image with sources to rewiew"
+  only:
+    - master
+ 
+deploy-to-prod:
+  stage: deploy
+  script:
+    - echo "Deploy docker-image with sources to production"
+  when: manual
+  only:
+    - master
+ 
+cleanup:
+  stage: cleanup
+  when: always
+  script:
+    - echo "Stop & remove containers"

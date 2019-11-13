@@ -70,7 +70,7 @@ export class Querier {
 
   async execQueries() {
     this.servers = this.servers || JSON.parse(readFileSync('config\/servers.json').toString())
-    console.log(this.strQ)
+    // console.log(this.strQ)
     const f = await this.processing()
 
     for await (const obj of f) {
@@ -87,23 +87,21 @@ export class Querier {
               str += '\t' + v
             }
           })
-          console.log(str)
+          // console.log(str)
 
         }
 
       } catch (e) {
-        console.log(e)
-        console.log(obj)
+        // console.log(e)
+        // console.log(obj)
       }
     }
     let gt = []
     gt.sort((a, b) => { return (a.ib > b.ib ? 1 : 0) })
     console.table(this.resultTable)
     if (this.socket) {
-      this.socket.send(JSON.stringify(this.resultTable))
-
-      this.socket.end()
-
+      // this.socket.send(JSON.stringify(this.resultTable))
+      this.socket.emit("end")
     }
   }
 }

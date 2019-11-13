@@ -4,5 +4,6 @@
     "editor.selectionHighlight": true,
     "typescript.suggest.completeFunctionCalls": true,
     "god.tsconfig": "./tsconfig.json",
+    "debug.node.autoAttach": "off",
     
 }
