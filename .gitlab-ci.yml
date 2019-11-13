@@ -2,17 +2,12 @@ image: node:latest
 stages:
   - install
   - start
-  - cleanup
-
+  
 compile:
   stage: install
   script:
     - npm install && npm -G install ts-node typescript
-  cache:
-   paths:
-     - node_modules/
-    
- 
+   
 release-image:
   stage: start
   script:
@@ -21,8 +16,3 @@ release-image:
     - master
     - release
  
-cleanup:
-  stage: cleanup
-  when: always
-  script:
-    - echo "Stop & remove containers"
