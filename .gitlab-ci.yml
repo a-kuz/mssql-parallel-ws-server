@@ -13,6 +13,7 @@ compile:
    paths:
      - node_modules/
     
+ 
 release-image:
   stage: start
   script:
@@ -21,7 +22,7 @@ release-image:
     - master
     - release
  
- cleanup:
+cleanup:
   stage: cleanup
   when: always
   script:
