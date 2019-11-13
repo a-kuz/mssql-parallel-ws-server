@@ -1,13 +1,11 @@
 image: node:latest
 stages:
-  - build
-  - test
-  - release
-  - deploy
+  - install
+  - start
   - cleanup
 
 compile:
-  stage: build
+  stage: install
   script:
     - npm install
     - npm -G install ts-node typescript
@@ -15,36 +13,15 @@ compile:
    paths:
      - node_modules/
     
- 
-testing:
-  stage: test
-  script:
-    - echo "Testing"
- 
 release-image:
-  stage: release
+  stage: start
   script:
     - npm start
   only:
     - master
     - release
  
-deploy-to-review:
-  stage: deploy
-  script:
-    - echo "Deploy docker-image with sources to rewiew"
-  only:
-    - master
- 
-deploy-to-prod:
-  stage: deploy
-  script:
-    - echo "Deploy docker-image with sources to production"
-  when: manual
-  only:
-    - master
- 
-cleanup:
+ cleanup:
   stage: cleanup
   when: always
   script:
