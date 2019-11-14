@@ -11,7 +11,7 @@ compile:
 release-image:
   stage: start
   script:
-    - npm install && npm install ts-node typescript && npm start
+    - npm install && npm install ts-node typescript && npm start stop
   only:
     - master
     - release

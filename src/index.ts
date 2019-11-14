@@ -35,7 +35,7 @@ li.on("message", data => {
 })
 console.log(`WebSockets started on ${hostname()}:${PORT}`)
 if (process.argv.includes('stop')) {
-  console.log(`args includes `stop`. Stoping`)
+  console.log(`args includes ''stop''. Stoping`)
   li.removeAllListeners()
   li.server.close()
   process.exit(0)
