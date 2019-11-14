@@ -6,7 +6,7 @@ stages:
 compile:
   stage: install
   script:
-    - npm install && npm -G install ts-node typescript
+    - npm install
    
 release-image:
   stage: start
