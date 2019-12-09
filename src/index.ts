@@ -10,15 +10,16 @@ const HISTORY_PATH = "sql_history.log";
 var PORT = process.env.PORT || 3002
 let li = s.listen(PORT).on('connect', (socket: iio.Socket) => {
 
-  socket.on("message", data => {
+  socket.on("message", async data => {
     // console.log("data: ", data)
     let writeOpts: WriteFileOptions = {}
     appendFile(HISTORY_PATH,
-      data +  String.fromCharCode(10) +
+      data + String.fromCharCode(10) +
       String.fromCharCode(1) +
       String.fromCharCode(2) +
       String.fromCharCode(3), err => { })
     var q = new Querier(data)
+    socket.emit("start", {totalInstances:233})
     q.setSocket(socket)
     q.execQueries();
 

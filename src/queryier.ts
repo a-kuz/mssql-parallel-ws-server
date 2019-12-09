@@ -1,107 +1,167 @@
+import * as util from 'util';
 import { readFileSync, appendFileSync } from 'fs';
 import { ConnectionPool, IRecordSet, IResult, IRow } from 'mssql'
-import { ServerHttp2Stream } from 'http2';
-// import { } from 'tslib'
+import { config } from 'mssql'
+import * as mssql from 'mssql'
+import * as ws from 'socket.io'
+import { type } from 'os';
 
+var perf_last: number = Date.now();
 
 export class Querier {
-  constructor(strQ: string) {
-    this.resultTable = []
-    this.strQ = strQ
-  }
+    constructor(strQ: string) {
 
-  private servers: any[]
-  private strQ: string
-  private resultTable: any[] = []
-  private stream: ServerHttp2Stream
-  private socket
+        let serversJSON = readFileSync('config\/servers.json').toString()
 
-  public setHttp2Stream(stream: ServerHttp2Stream) {
-    this.stream = stream
-  }
-  public setSocket(socket) {
-    this.socket = socket;
-  }
-  async executeSQL(connectionString: string, strQ: string | TemplateStringsArray): Promise<IResult<IRow>> {
-    // try {
-    let pool: ConnectionPool
-    let conn: ConnectionPool
-    let result: IResult<any>
+        this.servers = JSON.parse(serversJSON).sort(() => Math.random() > 0.5 ? 0 : -1)
+        // this.resultTable = []
+        this.strQ = strQ
 
-    const q: TemplateStringsArray = strQ as any
-    try {
-      pool = await new ConnectionPool(connectionString)
-      conn = await pool.connect()
-      result = await conn.query(q)
-    } catch (e) {
-      return e
     }
-    return result
-  }
+    private doned: number = 0
+    private fullDoned: number = 0
+    private servers: any[]
+    private TsqlQuery: string
+    private td: TextDecoder = new TextDecoder
 
-  async processing(): Promise<any> {
+    public set strQ(v: string) {
+        this.TsqlQuery = v;
+    }
 
-    // const r = await Promise.all(
-    let r = this.servers.map(async (server) => {
-      let ob: any
-      try {
-        const result = await this.executeSQL("mssql://sa:ser09l@" + server.СерверSQL + "/sup_kkm", this.strQ)
-        const recordset: IRecordSet<any> | Error = result.recordset
-        if (this.resultTable.length === 0) {
-          this.resultTable = [recordset]
+    public get strQ(): string {
+        return this.TsqlQuery;
+    }
+
+
+    // private resultTable: any[] = []
+    private socket: ws.Socket
+
+    public setSocket(socket: ws.Socket) {
+        this.socket = socket;
+        socket.emit("start", { totalInstances: (this.servers.length) })
+    }
+    async executeSQL(connectionString: config): Promise<IResult<IRow>> {
+        // try {
+        let pool: ConnectionPool
+        let conn: ConnectionPool
+        var result: IResult<any>
+
+
+        const q: TemplateStringsArray = this.strQ as any
+        try {
+            var conf = {}
+            
+            pool = new ConnectionPool(connectionString)
+            conn = await pool.connect()
+            result = await conn.query(q)
+            pool.close()
+        } catch (e) {
+            console.error(e)
+            return e
         }
-        if (recordset == undefined) { ob = [{ id:Math.random(),ib: server.Код }] } else {
-          ob = recordset.map((el) => {
-            el.ib = server.Код
-            el.id = Math.random()
-            return el
-          })
-        }
-        this.resultTable = this.resultTable.concat([...ob])
-      } catch (err) {
-        ob = [{ ib: server.СерверSQL, err }]
-        this.resultTable = this.resultTable.concat([...ob])
-      }
-      return ob
-    })
-    return r
-  }
+        return result
+    }
 
+    async processing(): Promise<any> {
+        this.doned = 0
+        console.log('processing')
+        var j: number
 
-  async execQueries() {
-    this.servers = this.servers || JSON.parse(readFileSync('config\/servers.json').toString())
-    // console.log(this.strQ)
-    const f = await this.processing()
-
-    for await (const obj of f) {
-      let str = ""
-      try {
-        if (obj.length) {
-          obj.map((el: { [s: string]: unknown; } | ArrayLike<unknown>) => {
-            str = str === "" ? "" : '\n'
-            if (this.socket) {
-              this.socket.send(el)
+        return this.servers.map(async (server, i: number) => {
+            this.doned = this.doned + 1
+            j = 0
+            let ob: any
+            let q = this.strQ
+            var result
+            try {
+                let c: config = {
+                    database: 'sup_kkm',
+                    server: server.СерверSQL,
+                    connectionTimeout: 2000, user: 'sa', password: 'ser09l'
+                }
+                result = await this.executeSQL(c)
             }
-            for (let v of Object.values(el)) {
+            catch (err) {
+                ob = [{ ib: server.СерверSQL, err }]
+                // this.resultTable = this.resultTable.concat([...ob])
 
-              str += '\t' + v
+            } finally {
+                const recordset: IRecordSet<any> | Error = result.recordset
+                // if (this.resultTable.length === 0) {
+                //     this.resultTable = [recordset]
+                // }
+                if (recordset == undefined) { ob = [{ id: -1, ib: server.Код }] } else {
+                    ob = (recordset as IRecordSet<any>).map((el) => {
+                        j++
+                        el.ib = server.Код
+                        el.id = ((i * 10000) + j)
+                        return el
+                    })
+                }
+                // this.resultTable = this.resultTable.concat([...ob])
+
+                return ob
             }
-          })
-          // console.log(str)
 
+        })
+    }
+
+
+    async execQueries() {
+
+        var f: Promise<any>[]
+
+        // try {
+        //     f = await 
+        // } catch (error) {
+        //     console.error('[38;2;255;; ERROR')
+        //     console.error(error)
+        //     if (this.socket) {
+        //         this.socket.error(error)
+        //         this.socket.emit('end')
+        //     }
+        //     return
+        // }
+
+
+
+        for await (const obj of (await this.processing())) {
+
+            let str = ''
+            try {
+
+                if (obj.length) {
+                    obj.forEach(element => {
+                        Object.keys(element).forEach(key => {
+                            if (Buffer.isBuffer(element[key])) {
+                                element[key] = buf2hex(element[key]);    
+                            }
+                        });
+                    });
+                    if (this.socket) {
+                        this.socket.send(obj)
+                        console.timeStamp(obj[0].ib)
+                        this.fullDoned++
+                        // tslint:disable-next-line: max-line-length
+                        this.socket.emit("progress", { value: (this.fullDoned / this.servers.length * 100), bufferValue: (this.doned / this.servers.length * 100) })
+                        console.log(`${perf_last - Date.now()} ${this.fullDoned} / ${this.servers.length}`)
+                        perf_last = Date.now()
+                    }
+                }
+
+            } catch (e) {
+                console.error(e)
+                console.log(obj)
+            }
         }
+      
 
-      } catch (e) {
-        // console.log(e)
-        // console.log(obj)
-      }
+        if (this.socket) {
+            // this.socket.send(JSON.stringify(this.resultTable))
+            this.socket.emit('end')
+        }
     }
-    let gt = []
-    gt.sort((a, b) => { return (a.ib > b.ib ? 1 : 0) })
-    console.table(this.resultTable)
-    if (this.socket) {
-      // this.socket.send(JSON.stringify(this.resultTable))
-      this.socket.emit("end")
-    }
-  }
 }
+function buf2hex(buffer) { // buffer is an ArrayBuffer
+    return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+  }
