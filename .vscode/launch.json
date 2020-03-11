@@ -59,7 +59,7 @@
       "name": "ts",
       "runtimeArgs": ["-r", "ts-node/register"],
       "args": ["src/index.ts"],
-      "trace": true,
+      "trace": true, 
       "showAsyncStacks": true
     }
   ]
