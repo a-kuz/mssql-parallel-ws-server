@@ -1,6 +1,7 @@
 node_modules/**/**
 vscode-ts-node-debugging/**/**/**
 *.js
+*.js.map
 *.log
 yarn-error.log
 report.*

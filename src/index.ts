@@ -4,8 +4,6 @@ import { Querier } from './queryier';
 import { appendFile, WriteFileOptions, readFile, readFileSync } from 'fs';
 import { hostname } from 'os';
 const HISTORY_PATH = "sql_history.log";
-`   1   3`
-
 var PORT = process.env.PORT || 3002
 let li = s.listen(PORT)
     .on('connect', (socket: iio.Socket) => {

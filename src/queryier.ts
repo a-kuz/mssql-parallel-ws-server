@@ -4,14 +4,11 @@ import { ConnectionPool, IRecordSet, IResult, IRow } from 'mssql'
 import { config, IOptions } from 'mssql'
 import * as mssql from 'mssql'
 import * as ws from 'socket.io'
-import { type } from 'os';
 var perf_last: number = Date.now();
 export class Querier {
     constructor(strQ: string = "") {
         let serversJSON = readFileSync('config\/servers.json').toString()
-        Querier.servers = JSON.parse(serversJSON).sort(() => Math.random() > 0.5 ? 0 : -1)
-        //JSON.parse(readFileSync('config\/servers.json').toString()).sort(() => Math.random() > 0.5 ? 0 : -1)
-        // this.resultTable = []
+        Querier.servers = JSON.parse(serversJSON).sort(() => Math.random() > 0.5 ? 0 : -1)     
         this.strQ = strQ
     }
     private doned: number = 0
@@ -26,8 +23,8 @@ export class Querier {
     }
     public get strQ(): string {
         return this.TsqlQuery;
-    }
-    // private resultTable: any[] = []
+    }  
+    
     private socket: ws.Socket
     public setSocket(socket: ws.Socket) {
         this.socket = socket;
