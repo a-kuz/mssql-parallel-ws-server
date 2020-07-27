@@ -1,14 +1,15 @@
-import * as util from 'util';
-import { readFileSync, appendFileSync } from 'fs';
-import { ConnectionPool, IRecordSet, IResult, IRow } from 'mssql'
+import { readFileSync } from 'fs';
+import { ConnectionPool, IRecordSet, IResult, IRow, ISOLATION_LEVEL } from 'mssql'
 import { config, IOptions } from 'mssql'
-import * as mssql from 'mssql'
-import * as ws from 'socket.io'
-var perf_last: number = Date.now();
+import ws from 'socket.io';
+
+var connectTimeout: number = 8000
+var requestTimeout: number = 900000
+
 export class Querier {
     constructor(strQ: string = "") {
         let serversJSON = readFileSync('config\/servers.json').toString()
-        Querier.servers = JSON.parse(serversJSON).sort(() => Math.random() > 0.5 ? 0 : -1)     
+        Querier.servers = JSON.parse(serversJSON).sort(() => Math.random() > 0.5 ? 0 : -1)
         this.strQ = strQ
     }
     private doned: number = 0
@@ -17,14 +18,14 @@ export class Querier {
         readFileSync('config\/servers.json').toString()
     ).sort(() => Math.random() > 0.5 ? 0 : -1)
     private TsqlQuery: string
-    
+
     public set strQ(v: string) {
         this.TsqlQuery = v;
     }
     public get strQ(): string {
         return this.TsqlQuery;
-    }  
-    
+    }
+
     private socket: ws.Socket
     public setSocket(socket: ws.Socket) {
         this.socket = socket;
@@ -43,29 +44,47 @@ export class Querier {
         return result
     }
 
-    async processingCallback(server, i: number)  {
+    async processingCallback(server, i: number) {
         console.log(server)
         //this.doned = this.doned + 1
         let j = 0
         let ob: any
-        let q = this.strQ
         var result
         var error
         try {
-            let o: IOptions = { connectTimeout: 3900, maxRetriesOnTransientErrors: 1, "requestTimeout": 500000, "trustedConnection": false }
+            let o: IOptions = {
+                connectTimeout,
+                isolationLevel: ISOLATION_LEVEL.READ_UNCOMMITTED,
+                appName: 'mass-sql',
+                maxRetriesOnTransientErrors: 2,
+                requestTimeout,
+                trustedConnection: false
+            }
             let c: config = {
                 database: 'sup_kkm',
                 server: server.insance,
-                connectionTimeout: 3900, user: 'sa', password: 'ser09l', requestTimeout: 500000, options: o
+                connectionTimeout: connectTimeout,
+                user: 'sa',
+                password: 'ser09l',
+                requestTimeout,
+                options: o
             }
-            result =  (await this.executeSQL(c)).recordset
+            result = (await this.executeSQL(c)).recordset
         }
-        catch (err) {
-            error = err
-            console.groupCollapsed(`err: ${err}`);
+        catch (error) {
+
+            if (this.socket) {
+
+                this.socket.emit("err",
+                    {
+                        error, ib: server.code
+                    })
+            }
+            console.groupCollapsed(`err: ${error}`);
             console.log(server.code);
             console.groupEnd();
-            ob = [{ ib: server.insance, err }]
+            ob = [{ ib: server.insance, error }]
+
             return ob
         } finally {
             const recordset: IRecordSet<any> | Error = result
@@ -89,18 +108,15 @@ export class Querier {
     async processing(): Promise<any> {
         //this.doned = 0
         console.log('processing')
-        var j: number
-        return Querier.servers.map((e,i)=>{
-            return this.processingCallback(e,i)
+        return Querier.servers.map((e, i) => {
+            return this.processingCallback(e, i)
 
         })
     }
     async execQueries() {
-        var f: Promise<any>[]
-        
+
         for await (const obj of (await this.processing())) {
-            
-            let str = ''
+
             try {
                 if (obj.length) {
                     obj.forEach(element => {
@@ -112,25 +128,34 @@ export class Querier {
                     });
                     if (this.socket) {
                         this.socket.send(obj)
-                        console.timeStamp(obj[0].ib)
                         this.fullDoned++
-                        // tslint:disable-next-line: max-line-length
-                        this.socket.emit("progress", { value: (this.fullDoned / Querier.servers.length * 100), bufferValue: (this.doned / Querier.servers.length * 100) })
-                        console.log(`${perf_last - Date.now()} ${this.fullDoned} / ${Querier.servers.length} (${this.doned})`)
-                        perf_last = Date.now()
+                        this.socket.emit("progress",
+                            {
+                                value: (this.fullDoned / Querier.servers.length * 100),
+                                bufferValue: (this.doned / Querier.servers.length * 100)
+                            })
+                        console.log(`${this.fullDoned} / ${Querier.servers.length} (${this.doned})`)
+
                     }
                 }
-            } catch (e) {
-                console.error(e)
+            } catch (error) {
+                console.error(error)
                 console.log(obj)
+                if (this.socket) {
+
+                    this.socket.emit("err",
+                        {
+                            error, ib: obj.ib
+                        })
+                }
             }
         }
         if (this.socket) {
-            // this.socket.send(JSON.stringify(this.resultTable))
             this.socket.emit('end')
         }
     }
 }
+
 function buf2hex(buffer) { // buffer is an ArrayBuffer
     return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
 }

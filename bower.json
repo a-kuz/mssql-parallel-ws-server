@@ -2,11 +2,11 @@
   "name": "mssql-parrallel-ws-server",
   "version": "0.0.1",
   "main": "src/index.ts",
-  "repository": "http://gitlab.cd.local/awesome/mssql-parrallel-ws-server",
+  "repository": {"url": "http://gitlab.cd.local/awesome/mssql-parrallel-ws-server","type": "git"},
   "author": "kuznecov_as",
   "scripts": {
     "start": "node -r ts-node/register src/index.ts",
-	"build":"
+	"build":"tsc"
   },
   "license": "MIT",
   "private": true,
