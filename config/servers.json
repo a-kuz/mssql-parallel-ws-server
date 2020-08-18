@@ -675,11 +675,6 @@
         "insance":  "10.2.84.161\\sqlexpress"
     },
     {
-        "host":  "87-ost.tt77.local",
-        "code":  "7700087",
-        "insance":  "87-ost.tt77.local"
-    },
-    {
         "host":  "88-serv.tt77.local",
         "code":  "7700088",
         "insance":  "88-serv.tt77.local\\sqlexpress"
@@ -920,6 +915,11 @@
         "insance":  "10.2.86.201\\sqlexpress"
     },
     {
+        "host":  "140-serv.tt77.local",
+        "code":  "7700140",
+        "insance":  "10.2.86.227\\sqlexpress"
+    },
+    {
         "host":  "301-ost.tt77.local",
         "code":  "7700301",
         "insance":  "301-ost.tt77.local"
@@ -963,6 +963,11 @@
         "host":  "311-ost.tt77.local",
         "code":  "7700311",
         "insance":  "311-ost.tt77.local"
+    },
+    {
+        "host":  "313-serv.tt77.local",
+        "code":  "7700313",
+        "insance":  "10.2.87.75\\sqlexpress"
     },
     {
         "host":  "314-serv.tt77.local",
